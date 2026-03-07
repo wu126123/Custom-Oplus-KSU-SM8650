@@ -10,7 +10,7 @@ on:
         options:
           - LineageOS
           - crdroidandroid
-          - Waffle-SM8650
+          - Sukimoka
 
       module_source:
         description: Kernel Module Source Code
