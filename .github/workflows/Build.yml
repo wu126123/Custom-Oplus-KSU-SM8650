@@ -11,6 +11,7 @@ on:
           - LineageOS
           - crdroidandroid
           - Sukimoka
+          - PixelOS-Devices
 
       module_source:
         description: Kernel Module Source Code
@@ -20,6 +21,7 @@ on:
           - LineageOS
           - crdroidandroid
           - Sukimoka
+          - PixelOS-Devices
           
       kernel_branch:
         description: Kernel Branch
