@@ -131,11 +131,15 @@ jobs:
             cp ./kernel_patches/include/linux/* ../include/linux/
             cd ..
             
-            echo "正在修复YAAP的问题"
-            sed -i '1i #include <linux/susfs.h>\n#ifdef CONFIG_KSU_SUSFS\nextern bool susfs_is_sdcard_android_data_decrypted;\nextern struct ida susfs_mnt_id_ida;\nextern struct ida susfs_mnt_group_ida;\nextern bool susfs_is_current_ksu_domain(void);\n#endif' fs/namespace.c
+            sed -i '/linux\/susfs.h/d' fs/namespace.c
+            sed -i '/linux\/cred.h/d' fs/namespace.c
+
+            sed -i '/#include <linux\/fs.h>/a #include <linux/cred.h>\n#include <linux/susfs.h>' fs/namespace.c
             
-            patch -p1 < 50_add_susfs_in_gki-android14-6.1.patch || echo "修复完成"
+            sed -i '/#include <linux\/susfs.h>/a #ifdef CONFIG_KSU_SUSFS\nextern bool susfs_is_sdcard_android_data_decrypted;\nextern struct ida susfs_mnt_id_ida;\nextern struct ida susfs_mnt_group_ida;\nextern bool susfs_is_current_ksu_domain(void);\n#endif' fs/namespace.c
             
+            patch -p1 < 50_add_susfs_in_gki-android14-6.1.patch || echo "修复中"
+
             if [[ "${{ inputs.kernel_source }}" == "Sukimoka" ]]; then
               sed -i '/#include <trace\/hooks\/blk.h>/a #include <linux\/susfs.h>' fs/namespace.c || true
             fi
