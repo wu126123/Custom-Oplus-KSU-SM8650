@@ -35,6 +35,7 @@ on:
         type: choice
         options:
           - KernelSU-Official
+          - KernelSU-Official-susfs
           - KernelSU-Next-susfs
           - ReSukiSU-susfs
 
@@ -108,14 +109,17 @@ jobs:
 
           KSU_TYPE="${{ inputs.ksu_type }}"
 
-          if [[ "${KSU_TYPE}" == "KernelSU-Official" ]]; then
+          if [[ "${KSU_TYPE}" == "KernelSU-Official-susfs" ]]; then
+            curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
+
+          elif [[ "${KSU_TYPE}" == "KernelSU-Official" ]]; then
             curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
 
           elif [[ "${KSU_TYPE}" == "KernelSU-Next-susfs" ]]; then
             curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/refs/heads/dev-susfs/kernel/setup.sh" | bash -s dev-susfs
 
           elif [[ "${KSU_TYPE}" == "ReSukiSU-susfs" ]]; then
-            curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s builtin
+            curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s main
 
           fi
           
@@ -127,6 +131,17 @@ jobs:
             cp ./kernel_patches/include/linux/* ../include/linux/
             cd ..
             patch -p1 < 50_add_susfs_in_gki-android14-6.1.patch
+          fi
+            
+          if [[ "${KSU_TYPE}" == "KernelSU-Official-susfs" ]]; then
+            echo "正在为原版KernelSU添加补丁..."
+            cp ./susfs/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./KernelSU/
+            cd ./KernelSU
+            patch -p1 < 10_enable_susfs_for_ksu.patch || true
+            cd ..
+          fi
+         
+          if [[ "${KSU_TYPE}" == *susfs ]]; then
             echo "CONFIG_KSU_SUSFS=y" >> arch/arm64/configs/gki_defconfig
             echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> arch/arm64/configs/gki_defconfig
             echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> arch/arm64/configs/gki_defconfig
@@ -137,7 +152,7 @@ jobs:
             echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> arch/arm64/configs/gki_defconfig
             echo "CONFIG_KSU_SUSFS_SUS_MAP=y" >> arch/arm64/configs/gki_defconfig
           fi
-          
+
           touch ./.scmversion
           sed -i "s|CONFIG_MODULE_SIG_PROTECT=y|CONFIG_MODULE_SIG_PROTECT=n|" arch/arm64/configs/gki_defconfig
           echo "CONFIG_TMPFS_XATTR=y" >> arch/arm64/configs/gki_defconfig
@@ -160,6 +175,8 @@ jobs:
           KSU_TYPE="${{ inputs.ksu_type }}"
           if [[ "${KSU_TYPE}" == "KernelSU-Official" ]]; then
             ZIP_PREFIX="KernelSU-Official"
+          elif [[ "${KSU_TYPE}" == "KernelSU-Official-susfs" ]]; then
+            ZIP_PREFIX="KernelSU-Official-SUSFS"
           elif [[ "${KSU_TYPE}" == "KernelSU-Next-susfs" ]]; then
             ZIP_PREFIX="KernelSU-Next-SUSFS"
           elif [[ "${KSU_TYPE}" == "ReSukiSU-susfs" ]]; then
@@ -202,6 +219,8 @@ jobs:
           KSU_TYPE="${{ inputs.ksu_type }}"
           if [[ "${KSU_TYPE}" == "KernelSU-Official" ]]; then
             KSU_TYPENAME="KernelSU (Official)"
+          elif [[ "${KSU_TYPE}" == "KernelSU-Official-susfs" ]]; then
+            KSU_TYPENAME="KernelSU Official + SUSFS"
           elif [[ "${KSU_TYPE}" == "KernelSU-Next-susfs" ]]; then
             KSU_TYPENAME="KernelSU-Next + SUSFS"
           elif [[ "${KSU_TYPE}" == "ReSukiSU-susfs" ]]; then
@@ -211,8 +230,8 @@ jobs:
 
           BRANCH="${{ inputs.kernel_branch }}"
           SOURCE="${{ inputs.kernel_source }}"
-          echo "REL_TAG=sm8650-${SOURCE}-${BRANCH}-${{ inputs.ksu_type }}-${TIME}" >> $GITHUB_ENV
-          echo "REL_TITLE=sm8650 ${SOURCE} ${BRANCH} | ${KSU_TYPENAME}" >> $GITHUB_ENV
+          echo "REL_TAG=${SOURCE}-${BRANCH}-${{ inputs.ksu_type }}-${TIME}" >> $GITHUB_ENV
+          echo "REL_TITLE=${SOURCE} ${BRANCH} | ${KSU_TYPENAME}" >> $GITHUB_ENV
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -237,3 +256,4 @@ jobs:
           draft: false
           prerelease: false
           files: release_zips/*.zip
+
