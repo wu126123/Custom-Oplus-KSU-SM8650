@@ -130,7 +130,14 @@ jobs:
             cp ./kernel_patches/fs/* ../fs/
             cp ./kernel_patches/include/linux/* ../include/linux/
             cd ..
-            patch -p1 < 50_add_susfs_in_gki-android14-6.1.patch
+            
+            if [[ "${{ inputs.kernel_source }}" == "Sukimoka" && "${{ inputs.module_source }}" == "Sukimoka" ]]; then
+              echo "修复YAAP头文件问题"
+              patch -p1 < 50_add_susfs_in_gki-android14-6.1.patch || echo "修复中"
+              sed -i '/#include <trace\/hooks\/blk.h>/a #include <linux\/susfs.h>' fs/namespace.c
+            else
+              patch -p1 < 50_add_susfs_in_gki-android14-6.1.patch
+            fi
           fi
             
           if [[ "${KSU_TYPE}" == "KernelSU-Official-susfs" ]]; then
@@ -256,4 +263,3 @@ jobs:
           draft: false
           prerelease: false
           files: release_zips/*.zip
-
