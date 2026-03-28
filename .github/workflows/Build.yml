@@ -122,6 +122,12 @@ jobs:
             curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s main
 
           fi
+
+          if [ -d "KernelSU/uapi" ]; then
+            ln -sf ../uapi KernelSU/kernel/uapi
+          elif [ -d "KernelSU-Next/uapi" ]; then
+            ln -sf ../uapi KernelSU-Next/kernel/uapi
+          fi
           
           if [[ "${{ inputs.ksu_type }}" == *susfs ]]; then
             git clone -b gki-android14-6.1 https://gitlab.com/simonpunk/susfs4ksu.git susfs
@@ -130,20 +136,7 @@ jobs:
             cp ./kernel_patches/fs/* ../fs/
             cp ./kernel_patches/include/linux/* ../include/linux/
             cd ..
-
-            patch -p1 < 50_add_susfs_in_gki-android14-6.1.patch || echo "补丁存在冲突，启动终极兜底修复"
-            
-            echo "执行注入..."
-            sed -i '/linux\/susfs.h/d' fs/namespace.c
-            sed -i '/linux\/cred.h/d' fs/namespace.c
-            sed -i '/extern bool susfs_is_sdcard_android_data_decrypted;/d' fs/namespace.c
-            sed -i '/extern struct ida susfs_mnt_id_ida;/d' fs/namespace.c
-            sed -i '/extern struct ida susfs_mnt_group_ida;/d' fs/namespace.c
-            sed -i '/extern bool susfs_is_current_ksu_domain/d' fs/namespace.c
-
-            sed -i '/static DEFINE_IDA(mnt_group_ida);/a #include <linux/cred.h>\n#include <linux/susfs.h>\nextern bool susfs_is_sdcard_android_data_decrypted;\nextern struct ida susfs_mnt_id_ida;\nextern struct ida susfs_mnt_group_ida;\nextern bool susfs_is_current_ksu_domain(void);' fs/namespace.c
-
-            sed -i '/#include <trace\/hooks\/blk.h>/a #include <linux\/susfs.h>' fs/namespace.c || true
+            patch -p1 < 50_add_susfs_in_gki-android14-6.1.patch
           fi
             
           if [[ "${KSU_TYPE}" == "KernelSU-Official-susfs" ]]; then
@@ -269,3 +262,4 @@ jobs:
           draft: false
           prerelease: false
           files: release_zips/*.zip
+
