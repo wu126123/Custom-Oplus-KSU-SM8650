@@ -123,8 +123,6 @@ jobs:
 
           fi
           
-           if [[ "${{ inputs.ksu_type }}" == *susfs ]]; then
-          # 2. 处理 SUSFS 补丁与变量注入修复
           if [[ "${{ inputs.ksu_type }}" == *susfs ]]; then
             git clone -b gki-android14-6.1 https://gitlab.com/simonpunk/susfs4ksu.git susfs
             cd susfs
