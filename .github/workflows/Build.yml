@@ -120,7 +120,7 @@ jobs:
             curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/refs/heads/dev-susfs/kernel/setup.sh" | bash -s dev-susfs
 
           elif [[ "${KSU_TYPE}" == "ReSukiSU" ]]; then
-            curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s main
+            curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/dev/kernel/setup.sh" | bash -s dev
 
           elif [[ "${KSU_TYPE}" == "ReSukiSU-susfs" ]]; then
             curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s main
