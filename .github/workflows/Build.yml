@@ -45,6 +45,33 @@ on:
         required: false
         type: string
         default: ""
+
+      lz4kd:
+        description: "是否启用lz4kd (6.1 关闭时使用 lz4 + zstd)"
+        required: true
+        type: choice
+        options:
+          - 'On'
+          - 'Off'
+        default: 'Off'
+
+      bbr:
+        description: "是否启用BBR算法 (对手机日用无太大意义)"
+        required: true
+        type: choice
+        options:
+          - 'On'
+          - 'Off'
+        default: 'Off'
+
+      proxy:
+        description: "是否添加代理性能优化"
+        required: true
+        type: choice
+        options:
+          - 'On'
+          - 'Off'
+        default: 'On'
           
 jobs:
   build:
@@ -108,23 +135,36 @@ jobs:
 
           cd sm8650
 
+          # === 注入 lz4kd 补丁逻辑 ===
+          if [[ "${{ inputs.lz4kd }}" == "On" ]]; then
+            echo "🚀 拉取并应用 lz4kd 补丁..."
+            git clone https://github.com/ShirkNeko/SukiSU_patch.git ../SukiSU_patch
+            
+            cp -r ../SukiSU_patch/other/zram/lz4k/include/linux/* ./include/linux/
+            cp -r ../SukiSU_patch/other/zram/lz4k/lib/* ./lib/
+            cp -r ../SukiSU_patch/other/zram/lz4k/crypto/* ./crypto/
+            cp -r ../SukiSU_patch/other/zram/lz4k_oplus ./lib/
+            
+            # sm8650 默认为 6.1 内核版本
+            cp ../SukiSU_patch/other/zram/zram_patch/6.1/lz4kd.patch ./
+            patch -p1 -F 3 < lz4kd.patch || true
+            cp ../SukiSU_patch/other/zram/zram_patch/6.1/lz4k_oplus.patch ./
+            patch -p1 -F 3 < lz4k_oplus.patch || true
+          fi
+          # ===========================
+
           KSU_TYPE="${{ inputs.ksu_type }}"
 
           if [[ "${KSU_TYPE}" == "KernelSU-Official-susfs" ]]; then
             curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
-
           elif [[ "${KSU_TYPE}" == "KernelSU-Official" ]]; then
             curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
-
           elif [[ "${KSU_TYPE}" == "KernelSU-Next-susfs" ]]; then
             curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/refs/heads/dev-susfs/kernel/setup.sh" | bash -s dev-susfs
-
           elif [[ "${KSU_TYPE}" == "ReSukiSU" ]]; then
             curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s main
-
           elif [[ "${KSU_TYPE}" == "ReSukiSU-susfs" ]]; then
             curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s main
-
           fi
           
           if [[ "${{ inputs.ksu_type }}" == *susfs ]]; then
@@ -145,28 +185,76 @@ jobs:
             cd ..
           fi
          
+          DEFCONFIG="arch/arm64/configs/gki_defconfig"
+
           if [[ "${KSU_TYPE}" == *susfs ]]; then
-            echo "CONFIG_KSU_SUSFS=y" >> arch/arm64/configs/gki_defconfig
-            echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> arch/arm64/configs/gki_defconfig
-            echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> arch/arm64/configs/gki_defconfig
-            echo "CONFIG_KSU_SUSFS_SUS_KSTAT=y" >> arch/arm64/configs/gki_defconfig
-            echo "CONFIG_KSU_SUSFS_SPOOF_UNAME=n" >> arch/arm64/configs/gki_defconfig
-            echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> arch/arm64/configs/gki_defconfig
-            echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> arch/arm64/configs/gki_defconfig
-            echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> arch/arm64/configs/gki_defconfig
-            echo "CONFIG_KSU_SUSFS_SUS_MAP=y" >> arch/arm64/configs/gki_defconfig
+            echo "CONFIG_KSU_SUSFS=y" >> $DEFCONFIG
+            echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> $DEFCONFIG
+            echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> $DEFCONFIG
+            echo "CONFIG_KSU_SUSFS_SUS_KSTAT=y" >> $DEFCONFIG
+            echo "CONFIG_KSU_SUSFS_SPOOF_UNAME=n" >> $DEFCONFIG
+            echo "CONFIG_KSU_SUSFS_ENABLE_LOG=y" >> $DEFCONFIG
+            echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y" >> $DEFCONFIG
+            echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> $DEFCONFIG
+            echo "CONFIG_KSU_SUSFS_SUS_MAP=y" >> $DEFCONFIG
           fi
 
+          # === 注入 BBR、代理优化和 lz4kd 的 Config 逻辑 ===
+          if [[ "${{ inputs.bbr }}" == "On" ]]; then
+            echo "🌐 启用BBR网络算法..."
+            echo "CONFIG_TCP_CONG_ADVANCED=y" >> $DEFCONFIG
+            echo "CONFIG_TCP_CONG_BBR=y" >> $DEFCONFIG
+            echo "CONFIG_NET_SCH_FQ=y" >> $DEFCONFIG
+            echo "CONFIG_TCP_CONG_BIC=n" >> $DEFCONFIG
+            echo "CONFIG_TCP_CONG_WESTWOOD=n" >> $DEFCONFIG
+            echo "CONFIG_TCP_CONG_HTCP=n" >> $DEFCONFIG
+          fi
+
+          if [[ "${{ inputs.proxy }}" == "On" ]]; then
+            echo "📦 加入代理优化..."
+            echo "CONFIG_BPF_STREAM_PARSER=y" >> $DEFCONFIG
+            echo "CONFIG_NETFILTER_XT_MATCH_ADDRTYPE=y" >> $DEFCONFIG
+            echo "CONFIG_NETFILTER_XT_SET=y" >> $DEFCONFIG
+            echo "CONFIG_IP_SET=y" >> $DEFCONFIG
+            echo "CONFIG_IP_SET_MAX=65534" >> $DEFCONFIG
+            echo "CONFIG_IP_SET_BITMAP_IP=y" >> $DEFCONFIG
+            echo "CONFIG_IP_SET_BITMAP_IPMAC=y" >> $DEFCONFIG
+            echo "CONFIG_IP_SET_BITMAP_PORT=y" >> $DEFCONFIG
+            echo "CONFIG_IP_SET_HASH_IP=y" >> $DEFCONFIG
+            echo "CONFIG_IP_SET_HASH_IPMARK=y" >> $DEFCONFIG
+            echo "CONFIG_IP_SET_HASH_IPPORT=y" >> $DEFCONFIG
+            echo "CONFIG_IP_SET_HASH_IPPORTIP=y" >> $DEFCONFIG
+            echo "CONFIG_IP_SET_HASH_IPPORTNET=y" >> $DEFCONFIG
+            echo "CONFIG_IP_SET_HASH_IPMAC=y" >> $DEFCONFIG
+            echo "CONFIG_IP_SET_HASH_MAC=y" >> $DEFCONFIG
+            echo "CONFIG_IP_SET_HASH_NETPORTNET=y" >> $DEFCONFIG
+            echo "CONFIG_IP_SET_HASH_NET=y" >> $DEFCONFIG
+            echo "CONFIG_IP_SET_HASH_NETNET=y" >> $DEFCONFIG
+            echo "CONFIG_IP_SET_HASH_NETPORT=y" >> $DEFCONFIG
+            echo "CONFIG_IP_SET_HASH_NETIFACE=y" >> $DEFCONFIG
+            echo "CONFIG_IP_SET_LIST_SET=y" >> $DEFCONFIG
+            echo "CONFIG_IP6_NF_NAT=y" >> $DEFCONFIG
+            echo "CONFIG_IP6_NF_TARGET_MASQUERADE=y" >> $DEFCONFIG
+          fi
+
+          if [[ "${{ inputs.lz4kd }}" == "On" ]]; then
+            echo "📦 启用lz4kd压缩..."
+            echo "CONFIG_CRYPTO_LZ4KD=y" >> $DEFCONFIG
+            echo "CONFIG_CRYPTO_LZ4K_OPLUS=y" >> $DEFCONFIG
+            echo "CONFIG_ZRAM_WRITEBACK=y" >> $DEFCONFIG
+          fi
+          # ==================================================
+
           touch ./.scmversion
-          sed -i "s|CONFIG_MODULE_SIG_PROTECT=y|CONFIG_MODULE_SIG_PROTECT=n|" arch/arm64/configs/gki_defconfig
-          echo "CONFIG_TMPFS_XATTR=y" >> arch/arm64/configs/gki_defconfig
+          sed -i "s|CONFIG_MODULE_SIG_PROTECT=y|CONFIG_MODULE_SIG_PROTECT=n|" $DEFCONFIG
+          echo "CONFIG_TMPFS_XATTR=y" >> $DEFCONFIG
           
           if [[ -n "${{ inputs.kernel_name }}" ]]; then
             CUSTOM_NAME="${{ inputs.kernel_name }}"
             if [[ "${CUSTOM_NAME}" != -* ]]; then
               CUSTOM_NAME="-${CUSTOM_NAME}"
             fi
-            echo "CONFIG_LOCALVERSION=\"${CUSTOM_NAME}\"" >> arch/arm64/configs/gki_defconfig
+            echo "CONFIG_LOCALVERSION=\"${CUSTOM_NAME}\"" >> $DEFCONFIG
             echo "Kernel name set to: ${CUSTOM_NAME}"
           fi
 
