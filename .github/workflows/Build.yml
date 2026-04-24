@@ -18,6 +18,7 @@ on:
         required: true
         type: choice
         options:
+          - none
           - KernelSU-Official
           - ReSukiSU
           - KernelSU-Next
@@ -224,7 +225,9 @@ jobs:
 
       - name: Make AnyKernel3
         run: |
-          if [[ "${{ inputs.ksu_type }}" == "KernelSU-Official" ]]; then
+          if [[ "${{ inputs.ksu_type }}" == "none" ]]; then
+            ZIP_PREFIX="NoKSU"
+          elif [[ "${{ inputs.ksu_type }}" == "KernelSU-Official" ]]; then
             ZIP_PREFIX="KernelSU-Official"
           elif [[ "${{ inputs.ksu_type }}" == "KernelSU-Official-susfs" ]]; then
             ZIP_PREFIX="KernelSU-Official-SUSFS"
@@ -271,7 +274,9 @@ jobs:
           echo "TIME=$TIME" >> $GITHUB_ENV
           echo "TIME_FORM=$TIME_FORM" >> $GITHUB_ENV
 
-          if [[ "${{ inputs.ksu_type }}" == "KernelSU-Official" ]]; then
+          if [[ "${{ inputs.ksu_type }}" == "none" ]]; then
+            KSU_TYPENAME="None (No KSU)"
+          elif [[ "${{ inputs.ksu_type }}" == "KernelSU-Official" ]]; then
             KSU_TYPENAME="KernelSU (Official)"
           elif [[ "${{ inputs.ksu_type }}" == "KernelSU-Official-susfs" ]]; then
             KSU_TYPENAME="KernelSU Official + SUSFS"
