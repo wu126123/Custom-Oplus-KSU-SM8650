@@ -131,23 +131,23 @@ jobs:
             fi
             if grep -q 'DEFAULT_KSU_MNT_ID\|susfs_mnt_id_ida' ./fs/namespace.c && ! grep -qF '#include <linux/susfs_def.h>' ./fs/namespace.c; then
               sed -i 's|#include <linux/mnt_idmapping.h>|#include <linux/mnt_idmapping.h>
-#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
-#include <linux/susfs_def.h>
-#endif|' ./fs/namespace.c
+          #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
+          #include <linux/susfs_def.h>
+          #endif|' ./fs/namespace.c
               
               if ! grep -q 'extern bool susfs_is_current_ksu_domain' ./fs/namespace.c; then
                 sed -i 's|#include "internal.h"|#include "internal.h"
 
-#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
-extern bool susfs_is_current_ksu_domain(void);
-extern bool susfs_is_sdcard_android_data_decrypted __read_mostly;
+          #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
+          extern bool susfs_is_current_ksu_domain(void);
+          extern bool susfs_is_sdcard_android_data_decrypted __read_mostly;
 
-#define CL_COPY_MNT_NS BIT(25)
+          #define CL_COPY_MNT_NS BIT(25)
 
-static DEFINE_IDA(susfs_mnt_id_ida);
-static DEFINE_IDA(susfs_mnt_group_ida);
+          static DEFINE_IDA(susfs_mnt_id_ida);
+          static DEFINE_IDA(susfs_mnt_group_ida);
 
-#endif|' ./fs/namespace.c
+          #endif|' ./fs/namespace.c
               fi
             fi
           fi
