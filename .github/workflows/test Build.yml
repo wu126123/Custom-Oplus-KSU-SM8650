@@ -83,23 +83,23 @@ jobs:
 
           - name: Apply ADIOS I/O Scheduler Patch
           run: |
-    # 设置补丁存放路径
-    PATCH_DIR="${GITHUB_WORKSPACE}/patches"
-    PATCH_FILE="${PATCH_DIR}/adios_ioscheduler_6.1.patch"
+          # 设置补丁存放路径
+          PATCH_DIR="${GITHUB_WORKSPACE}/patches"
+          PATCH_FILE="${PATCH_DIR}/adios_ioscheduler_6.1.patch"
     
-    # 创建补丁目录并下载补丁
-    mkdir -p "${PATCH_DIR}"
-    curl -LSs https://raw.githubusercontent.com/qdykernel/Build_Oneplus_Realme_Action/main/patch/adios_ioscheduler_6.1.patch -o "${PATCH_FILE}"
+          # 创建补丁目录并下载补丁
+          mkdir -p "${PATCH_DIR}"
+          curl -LSs https://raw.githubusercontent.com/qdykernel/Build_Oneplus_Realme_Action/main/patch/adios_ioscheduler_6.1.patch -o "${PATCH_FILE}"
     
-    # 进入内核源码目录
-    cd sm8650  # 确保与你clone内核源码后的目录名一致
+          # 进入内核源码目录
+          cd sm8650  # 确保与你clone内核源码后的目录名一致
     
-    # 应用补丁
-    patch -p1 < "${PATCH_FILE}"
+          # 应用补丁
+          patch -p1 < "${PATCH_FILE}"
     
-    # 启用 ADIOS 相关内核配置
-    echo "CONFIG_MQ_IOSCHED_ADIOS=y" >> arch/arm64/configs/gki_defconfig
-    echo "CONFIG_MQ_IOSCHED_DEFAULT_ADIOS=n" >> arch/arm64/configs/gki_defconfig
+          # 启用 ADIOS 相关内核配置
+          echo "CONFIG_MQ_IOSCHED_ADIOS=y" >> arch/arm64/configs/gki_defconfig
+          echo "CONFIG_MQ_IOSCHED_DEFAULT_ADIOS=n" >> arch/arm64/configs/gki_defconfig
     
           fi
 
