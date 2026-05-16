@@ -10,7 +10,7 @@ on:
         options:
 #        - YAAP
         - LineageOS
-#        - Crdroid
+        - Crdroid
 #        - PixelOS
         - aosp-giuliac-giulia
         - YAAP-giuliac-giulia
