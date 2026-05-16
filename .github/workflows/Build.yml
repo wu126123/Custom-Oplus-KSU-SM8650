@@ -8,11 +8,12 @@ on:
         required: true
         type: choice
         options:
-        - YAAP
+#        - YAAP
         - LineageOS
-        - Crdroid
-        - PixelOS
+#        - Crdroid
+#        - PixelOS
         - aosp-giuliac-giulia
+        - YAAP-giuliac-giulia
         
       ksu_type:
         description: "KernelSU Version"
@@ -84,6 +85,10 @@ jobs:
             
           elif [[ "${{ inputs.rom_source }}" == "aosp-giuliac-giulia" ]]; then
             git clone --depth=1 -b lineage-23.2 https://github.com/aosp-for-giulia/android_kernel_oneplus_sm8650.git sm8650
+            git clone --depth=1 -b lineage-23.2 https://github.com/aosp-for-giulia/android_kernel_oneplus_sm8650-modules.git sm8650-modules
+                   
+          elif [[ "${{ inputs.rom_source }}" == "YAAP-giuliac-giulia" ]]; then
+            git clone --depth=1 -b sixteen https://github.com/aosp-for-giulia/yaap_kernel_oneplus_sm8650.git sm8650
             git clone --depth=1 -b lineage-23.2 https://github.com/aosp-for-giulia/android_kernel_oneplus_sm8650-modules.git sm8650-modules
 
           fi
