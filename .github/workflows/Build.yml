@@ -70,8 +70,8 @@ jobs:
         run: |
 
           if [[ "${{ inputs.rom_source }}" == "LineageOS" ]]; then
-            git clone --depth=1 -b lineage-23.2 https://github.com/LineageOS/android_kernel_xiaomi_sm8550.git sm8650
-            git clone --depth=1 -b lineage-23.2 https://github.com/LineageOS/android_kernel_xiaomi_sm8550-modules.git sm8650-modules
+            git clone --depth=1 -b lineage-23.2 https://github.com/LineageOS/android_kernel_xiaomi_sm8550.git sm8550
+            git clone --depth=1 -b lineage-23.2 https://github.com/LineageOS/android_kernel_xiaomi_sm8550-modules.git sm8550-modules
 
 
           fi
@@ -91,7 +91,7 @@ jobs:
           export LLVM_IAS=1
           export CC=clang CXX=clang++ HOSTCC=clang HOSTCXX=clang++ LD=ld.lld AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip
 
-          cd sm8650
+          cd sm8550
 
           if [[ "${{ inputs.ksu_type }}" == KernelSU-Official* ]]; then
             curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
@@ -231,7 +231,7 @@ jobs:
           fi
           ZIP_NAME="${ZIP_PREFIX}-$(date -u +"%m%d")"
           git clone --depth=1 https://github.com/Kernel-SU/AnyKernel3.git
-          cp sm8650/out/arch/arm64/boot/Image AnyKernel3/Image
+          cp sm8550/out/arch/arm64/boot/Image AnyKernel3/Image
           cd AnyKernel3
           zip -r9 ../"${ZIP_NAME}.zip" * -x .git
 
